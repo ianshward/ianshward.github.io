@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display a popup on hover</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<style>
+.mapboxgl-popup {
+  max-width: 400px;
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+.map-overlay {
+font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+position: absolute;
+width: 25%;
+top: 0;
+left: 0;
+padding: 10px;
+}
+ 
+.map-overlay .map-overlay-inner {
+background-color: #fff;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+border-radius: 3px;
+padding: 10px;
+margin-bottom: 10px;
+}
+ 
+.map-overlay label {
+display: block;
+margin: 0 0 10px;
+}
+ 
+.map-overlay input {
+background-color: transparent;
+display: inline-block;
+width: 100%;
+position: relative;
+margin: 0;
+cursor: ew-resize;
+}
+
+</style>
+<div id="map"></div>
+
+<div class="map-overlay top">
+<div class="map-overlay-inner">
+<label>Layer opacity: <span id="slider-value">25%</span></label>
+<input
+id="slider"
+type="range"
+min="0"
+max="100"
+step="0"
+value="25"
+/>
+</div>
+</div>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaWFuc2h3YXJkIiwiYSI6IjJkQ3ZGdGMifQ.MZcAYjlfL5rVunlmC9rZlA';
+const map = new mapboxgl.Map({
+container: 'map',
+// Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+//style: 'mapbox://styles/ianshward/clle4nl8w01fy01qm60qx4bd8',
+style: 'mapbox://styles/ianshward/clle5zyr801k501qk3ul387kc',
+center: [-82.45887,27.94971],
+zoom: 11.15
+});
+
+
+var slider = document.getElementById('slider');
+var sliderValue = document.getElementById('slider-value');
+
+map.on('load', () => {
+  map.addSource('units', {
+    type: 'vector',
+    url: 'mapbox://ianshward.multiple-cities-units-tiles',
+  });
+
+  map.addLayer({
+    id: 'unit-points',
+    //type: 'circle',
+    type: 'symbol',
+    source: 'units',
+    'source-layer': 'units',
+    //paint: {
+    //  'circle-radius': 6,
+    //  'circle-color': 'blue',
+    //},
+    layout: {
+      'text-field': ['get', 'full_address'], // Replace 'address' with the property name
+      'text-font': ['Open Sans Regular'],
+      'text-size': 12,
+      'text-anchor': 'top',
+    },
+    paint: {
+      'text-color': 'white',
+    },
+  });
+
+/*
+map.addSource('satellite', {
+'type': 'raster',
+'url': 'mapbox://mapbox.satellite'
+});
+map.addLayer({
+'id': 'satellite',
+'source': 'satellite',
+'type': 'raster',
+ paint: {
+    'raster-opacity': 0.5, // Adjust the opacity value here (0 to 1)
+  },
+});
+*/
+ 
+slider.addEventListener('input', function(e) {
+// Adjust the layers opacity. layer here is arbitrary - this could
+// be another layer name found in your style or a custom layer
+// added on the fly using `addSource`.
+map.setPaintProperty(
+'satellite',
+'raster-opacity',
+parseInt(e.target.value, 10) / 100
+);
+ 
+// Value indicator
+sliderValue.textContent = e.target.value + '%';
+});
+
+
+});
+
+const popup = new mapboxgl.Popup({
+  closeButton: false,
+  closeOnClick: false,
+});
+
+map.on('mouseenter', 'unit-points', (e) => {
+  map.getCanvas().style.cursor = 'pointer';
+
+  const coordinates = e.features[0].geometry.coordinates.slice();
+  const address = e.features[0].properties.address_number + ' ' + e.features[0].properties.address_street + e.features[0].properties.address_suffix;
+  const unit = e.features[0].properties.unit;
+
+  popup.setLngLat(coordinates).setHTML(`<p>Address: ${address}</p><p>Unit: ${unit}`).addTo(map);
+});
+
+map.on('mouseleave', 'address-points', () => {
+  map.getCanvas().style.cursor = '';
+  popup.remove();
+});
+
+</script>
+ 
+</body>
+</html>
