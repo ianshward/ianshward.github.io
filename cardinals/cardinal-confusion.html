@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display a popup on hover</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<style>
+.mapboxgl-popup {
+  max-width: 400px;
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+
+</style>
+<div id="map"></div>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaWFuc2h3YXJkIiwiYSI6IjJkQ3ZGdGMifQ.MZcAYjlfL5rVunlmC9rZlA';
+const map = new mapboxgl.Map({
+container: 'map',
+style: 'mapbox://styles/ianshward/cllgp2f4z01vl01p84rew5r6h',
+center: [-87.624361,41.87815],
+zoom: 11.15
+});
+
+map.on('load', () => {
+  map.addSource('cardinals', {
+    type: 'vector',
+    url: 'mapbox://ianshward.cardinal-confusion-tiles',
+  });
+
+  map.addLayer({
+    id: 'cardinal-confusion',
+    type: 'symbol',
+    source: 'cardinals',
+    'source-layer': 'cardinals',
+    layout: {
+      'text-field': ['get', 'all_names'], // Replace 'address' with the property name
+      'text-font': ['Open Sans Regular'],
+      'text-size': 12,
+      'text-anchor': 'top',
+    },
+    paint: {
+      'text-color': 'blue',
+    },
+  });
+
+});
+
+const popup = new mapboxgl.Popup({
+  closeButton: false,
+  closeOnClick: false,
+});
+
+map.on('mouseenter', 'cardinal-confusion', (e) => {
+  map.getCanvas().style.cursor = 'pointer';
+
+  const coordinates = e.features[0].geometry.coordinates.slice();
+  const names = e.features[0].properties.all_names;
+  const addressesincluster = e.features[0].properties.addressesincluster;
+
+  popup.setLngLat(coordinates).setHTML(`<p>Names: ${names}</p><p>Addresses in cluster: ${addressesincluster}`).addTo(map);
+});
+
+map.on('mouseleave', 'cardinal-confusion', () => {
+  map.getCanvas().style.cursor = '';
+  popup.remove();
+});
+
+</script>
+</body>
+</html>
